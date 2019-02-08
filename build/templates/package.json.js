@@ -2,6 +2,14 @@
 const async_1 = require("alcalzone-shared/async");
 const JSON5 = require("json5");
 const fetchVersions_1 = require("../src/lib/fetchVersions");
+async function safeReadVersion(dep) {
+    try {
+        return await fetchVersions_1.fetchPackageVersion(dep);
+    }
+    catch (e) {
+        return "0.0.0";
+    }
+}
 const templateFunction = async (answers) => {
     const isAdapter = answers.features.indexOf("adapter") > -1;
     const isWidget = answers.features.indexOf("vis") > -1;
@@ -12,7 +20,7 @@ const templateFunction = async (answers) => {
     const dependencyPromises = []
         .concat(isAdapter ? ["@iobroker/adapter-core"] : [])
         .sort()
-        .map((dep) => (async () => `"${dep}": "^${await fetchVersions_1.fetchPackageVersion(dep)}"`));
+        .map((dep) => (async () => `"${dep}": "^${await safeReadVersion(dep)}"`));
     const dependencies = await async_1.promiseSequence(dependencyPromises);
     const devDependencyPromises = []
         .concat([
@@ -20,6 +28,8 @@ const templateFunction = async (answers) => {
         "@types/gulp",
         "gulp",
         "axios",
+        // testing is always required
+        "@iobroker/testing",
     ])
         .concat(isAdapter ? [
         // support adapter testing by default
@@ -51,8 +61,25 @@ const templateFunction = async (answers) => {
         .concat(useESLint ? ["eslint"] : [])
         .concat(useNyc ? ["nyc"] : [])
         .sort()
-        .map((dep) => (async () => `"${dep}": "^${await fetchVersions_1.fetchPackageVersion(dep)}"`));
+        .map((dep) => (async () => `"${dep}": "^${await safeReadVersion(dep)}"`));
     const devDependencies = await async_1.promiseSequence(devDependencyPromises);
+    let keywords = "";
+    if (answers.keywords) {
+        const words = answers.keywords.split(",").map(word => word.trim());
+        words.unshift("ioBroker");
+        words.unshift("Smart Home");
+        words.unshift("home automation");
+        keywords = JSON.stringify(words, null, 2);
+    }
+    else {
+        keywords = `
+	[
+		"ioBroker",
+		"template",
+		"Smart Home",
+		"home automation",
+	]`;
+    }
     const template = `
 {
 	"name": "iobroker.${answers.adapterName.toLowerCase()}",
@@ -64,12 +91,7 @@ const templateFunction = async (answers) => {
 	},
 	"homepage": "https://github.com/${answers.authorGithub}/ioBroker.${answers.adapterName}",
 	"license": "${answers.license.id}",
-	"keywords": [
-		"ioBroker",
-		"template",
-		"Smart Home",
-		"home automation",
-	],
+	"keywords": ${keywords},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/${answers.authorGithub}/ioBroker.${answers.adapterName}",
@@ -93,8 +115,9 @@ const templateFunction = async (answers) => {
 			`) : (`
 				"test:js": "mocha --opts test/mocha.custom.opts",
 			`)}
-			"test:package": "mocha test/testPackageFiles.js --exit",
-			"test:iobroker": "mocha test/testStartup.js --exit",
+			"test:package": "mocha test/package --exit",
+			"test:unit": "mocha test/unit --exit",
+			"test:integration": "mocha test/integration --exit",
 			"test": "${useTypeScript ? "npm run test:ts" : "npm run test:js"} && npm run test:package",
 			${useNyc ? `"coverage": "nyc npm run test:ts",` : ""}
 			${useTSLint ? (`
@@ -104,6 +127,9 @@ const templateFunction = async (answers) => {
 				"lint": "npm run lint:js",
 				"lint:js": "eslint",
 			`) : ""}
+		`) : isWidget ? (`
+			"test:package": "mocha test/package --exit",
+			"test": "npm run test:package",
 		`) : ""}
 	},
 	${useNyc ? `"nyc": {

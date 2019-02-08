@@ -82,6 +82,15 @@ export const questionsAndText: (Question | QuestionGroup | string)[] = [
 				optional: true,
 				resultTransform: transformDescription,
 			},
+			{
+				type: "input",
+				name: "keywords",
+				message: "Please enter comma separated keywords:",
+				hint: "(optional)",
+				initial: "template",
+				optional: true,
+				resultTransform: transformDescription,
+			},
 		],
 	},
 	{
@@ -163,6 +172,13 @@ export const questionsAndText: (Question | QuestionGroup | string)[] = [
 					{ message: "when the instance object changes", value: "once" },
 					{ message: "never", value: "none" },
 				],
+			},
+			{
+				condition: { name: "startMode", value: "schedule" },
+				type: "input",
+				name: "startMode",
+				message: "CRON rule for schedule?",
+				initial: "8 * * * *",
 			},
 			{
 				condition: { name: "features", contains: "adapter" },
@@ -356,6 +372,8 @@ export interface Answers {
 	gitCommit?: "yes" | "no";
 	startMode?: "daemon" | "schedule" | "subscribe" | "once" | "none";
 	icon?: string;
+	keywords?: string;
+	schedule?: string;
 	parameters?: {
 		name: string,
 		title: string,

@@ -73,6 +73,20 @@ export = (async answers => {
     }
 `;
 	}
+	let keywords = "";
+	if (answers.keywords) {
+		const words = answers.keywords.split(",").map(word => word.trim());
+		// may be translate words in different languages
+		keywords = JSON.stringify(words, null, 2);
+	} else {
+		keywords = `
+	[
+		"ioBroker",
+		"template",
+		"Smart Home",
+		"home automation",
+	]`;
+	}
 
 	const template = `
 {
@@ -99,12 +113,7 @@ export = (async answers => {
 		"authors": [
 			"${answers.authorName} <${answers.authorEmail}>"
 		],
-		"keywords": [
-			"ioBroker",
-			"template",
-			"Smart Home",
-			"home automation",
-		],
+		"keywords": ${keywords},
 		"license": "${answers.license!.id}",
 		"platform": "Javascript/Node.js",
 		"main": "${useTypeScript ? "build/" : ""}main.js",
@@ -121,6 +130,8 @@ export = (async answers => {
 			"mode": "${answers.startMode || "daemon"}",
 			"type": "${answers.type || "general"}",
 			"compact": true,
+			${answers.startMode === "schedule" ? `
+			"schedule": "${answers.schedule || "8 * * * *"}",` : ""}
 		`) : isWidget ? (`
 			"onlyWWW": true,
 			"noConfig": true,

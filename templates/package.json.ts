@@ -33,6 +33,8 @@ const templateFunction: TemplateFunction = async answers => {
 			"@types/gulp",
 			"gulp",
 			"axios",
+			// testing is always required
+			"@iobroker/testing",
 		])
 		.concat(isAdapter ? [
 			// support adapter testing by default
@@ -68,6 +70,23 @@ const templateFunction: TemplateFunction = async answers => {
 		;
 	const devDependencies = await promiseSequence<string>(devDependencyPromises);
 
+	let keywords = "";
+	if (answers.keywords) {
+		const words = answers.keywords.split(",").map(word => word.trim());
+		words.unshift("ioBroker");
+		words.unshift("Smart Home");
+		words.unshift("home automation");
+		keywords = JSON.stringify(words, null, 2);
+	} else {
+		keywords = `
+	[
+		"ioBroker",
+		"template",
+		"Smart Home",
+		"home automation",
+	]`;
+	}
+
 	const template = `
 {
 	"name": "iobroker.${answers.adapterName.toLowerCase()}",
@@ -79,12 +98,7 @@ const templateFunction: TemplateFunction = async answers => {
 	},
 	"homepage": "https://github.com/${answers.authorGithub}/ioBroker.${answers.adapterName}",
 	"license": "${answers.license!.id}",
-	"keywords": [
-		"ioBroker",
-		"template",
-		"Smart Home",
-		"home automation",
-	],
+	"keywords": ${keywords},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/${answers.authorGithub}/ioBroker.${answers.adapterName}",
@@ -108,8 +122,9 @@ const templateFunction: TemplateFunction = async answers => {
 			`) : (`
 				"test:js": "mocha --opts test/mocha.custom.opts",
 			`)}
-			"test:package": "mocha test/testPackageFiles.js --exit",
-			"test:iobroker": "mocha test/testStartup.js --exit",
+			"test:package": "mocha test/package --exit",
+			"test:unit": "mocha test/unit --exit",
+			"test:integration": "mocha test/integration --exit",
 			"test": "${useTypeScript ? "npm run test:ts" : "npm run test:js"} && npm run test:package",
 			${useNyc ? `"coverage": "nyc npm run test:ts",` : ""}
 			${useTSLint ? (`
@@ -119,6 +134,9 @@ const templateFunction: TemplateFunction = async answers => {
 				"lint": "npm run lint:js",
 				"lint:js": "eslint",
 			`) : ""}
+		`) : isWidget ? (`
+			"test:package": "mocha test/package --exit",
+			"test": "npm run test:package",
 		`) : ""}
 	},
 	${useNyc ? `"nyc": {

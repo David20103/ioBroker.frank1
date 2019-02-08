@@ -165,8 +165,8 @@ async function translateText(text, targetLang) {
 exports.translateText = translateText;
 function formatLicense(licenseText, answers) {
     return licenseText
-        .replace(/\[year\]/g, new Date().getFullYear().toString())
-        .replace(/\[fullname\]/g, answers.authorName);
+        .replace(/\[year]/g, new Date().getFullYear().toString())
+        .replace(/\[fullname]/g, answers.authorName);
 }
 exports.formatLicense = formatLicense;
 /** Replaces 4-space indentation with tabs */

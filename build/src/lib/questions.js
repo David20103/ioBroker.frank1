@@ -61,6 +61,15 @@ exports.questionsAndText = [
                 optional: true,
                 resultTransform: actionsAndTransformers_1.transformDescription,
             },
+            {
+                type: "input",
+                name: "keywords",
+                message: "Please enter comma separated keywords:",
+                hint: "(optional)",
+                initial: "template",
+                optional: true,
+                resultTransform: actionsAndTransformers_1.transformDescription,
+            },
         ],
     },
     {
@@ -144,6 +153,13 @@ exports.questionsAndText = [
                 ],
             },
             {
+                condition: { name: "startMode", value: "schedule" },
+                type: "input",
+                name: "startMode",
+                message: "CRON rule for schedule?",
+                initial: "8 * * * *",
+            },
+            {
                 condition: { name: "features", contains: "adapter" },
                 type: "select",
                 name: "language",
@@ -183,6 +199,13 @@ exports.questionsAndText = [
                     { message: "code coverage" },
                 ],
             }),
+            {
+                condition: { name: "features", contains: "adapter" },
+                type: "select",
+                name: "connection",
+                message: `Do you have connection state indicator (To some device or some service)?`,
+                choices: ["no", "yes"],
+            },
             // TODO: enable React (only TypeScript at the start)
             // {
             // 	condition: [
